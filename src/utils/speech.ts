@@ -48,6 +48,48 @@ function stopKeepAlive() {
 
 initVoices();
 
+function createUtterance(text: string, rate: number, onDone: () => void): SpeechSynthesisUtterance {
+  if (!japaneseVoice) {
+    const voice = findJapaneseVoice();
+    if (voice) japaneseVoice = voice;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ja-JP';
+  utterance.rate = rate;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  if (japaneseVoice) {
+    utterance.voice = japaneseVoice;
+  }
+
+  let resolved = false;
+  const done = () => {
+    if (resolved) return;
+    resolved = true;
+    stopKeepAlive();
+    onDone();
+  };
+
+  utterance.onstart = () => {
+    startKeepAlive();
+  };
+
+  utterance.onend = done;
+  utterance.onerror = (e) => {
+    const err = e as SpeechSynthesisErrorEvent;
+    if (err.error === 'canceled') {
+      done();
+      return;
+    }
+    console.warn('[Speech] Error:', err.error);
+    done();
+  };
+
+  return utterance;
+}
+
 export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
   return new Promise((resolve) => {
     if (!('speechSynthesis' in window)) {
@@ -58,63 +100,32 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
 
     stopKeepAlive();
 
-    if (!japaneseVoice) {
-      const voice = findJapaneseVoice();
-      if (voice) japaneseVoice = voice;
-    }
+    const isSpeaking = speechSynthesis.speaking || speechSynthesis.pending;
 
-    const doSpeak = () => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ja-JP';
-      utterance.rate = rate;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      if (japaneseVoice) {
-        utterance.voice = japaneseVoice;
-      }
-
-      let resolved = false;
-      const done = () => {
-        if (resolved) return;
-        resolved = true;
-        stopKeepAlive();
-        resolve();
-      };
-
-      utterance.onstart = () => {
-        startKeepAlive();
-      };
-
-      utterance.onend = done;
-      utterance.onerror = (e) => {
-        if ((e as SpeechSynthesisErrorEvent).error === 'canceled') {
-          done();
-          return;
-        }
-        console.warn('[Speech] Error:', (e as SpeechSynthesisErrorEvent).error);
-        done();
-      };
-
+    if (isSpeaking) {
+      speechSynthesis.cancel();
+      setTimeout(() => {
+        const utterance = createUtterance(text, rate, resolve);
+        speechSynthesis.speak(utterance);
+        speechSynthesis.resume();
+      }, 150);
+    } else {
+      const utterance = createUtterance(text, rate, resolve);
       speechSynthesis.speak(utterance);
       speechSynthesis.resume();
-
-      setTimeout(() => {
-        if (!resolved && !speechSynthesis.speaking) {
-          done();
-        }
-      }, 8000);
-
-      setTimeout(done, 15000);
-    };
-
-    if (speechSynthesis.speaking || speechSynthesis.pending) {
-      speechSynthesis.cancel();
-      setTimeout(doSpeak, 100);
-    } else {
-      speechSynthesis.cancel();
-      setTimeout(doSpeak, 50);
     }
+
+    setTimeout(() => {
+      if (!speechSynthesis.speaking) {
+        stopKeepAlive();
+        resolve();
+      }
+    }, 8000);
+
+    setTimeout(() => {
+      stopKeepAlive();
+      resolve();
+    }, 15000);
   });
 }
 
