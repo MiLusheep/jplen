@@ -36,7 +36,7 @@ function startKeepAlive() {
     if (speechSynthesis.speaking) {
       speechSynthesis.resume();
     }
-  }, 5000);
+  }, 3000);
 }
 
 function stopKeepAlive() {
@@ -56,53 +56,65 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
       return;
     }
 
-    if (speechSynthesis.speaking) {
-      speechSynthesis.cancel();
-    }
+    stopKeepAlive();
 
     if (!japaneseVoice) {
       const voice = findJapaneseVoice();
       if (voice) japaneseVoice = voice;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'ja-JP';
-    utterance.rate = rate;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    const doSpeak = () => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ja-JP';
+      utterance.rate = rate;
+      utterance.pitch = 1;
+      utterance.volume = 1;
 
-    if (japaneseVoice) {
-      utterance.voice = japaneseVoice;
-    }
-
-    let resolved = false;
-    const done = () => {
-      if (resolved) return;
-      resolved = true;
-      stopKeepAlive();
-      resolve();
-    };
-
-    utterance.onstart = () => {
-      startKeepAlive();
-    };
-
-    utterance.onend = done;
-    utterance.onerror = (e) => {
-      console.warn('[Speech] Error:', e);
-      done();
-    };
-
-    speechSynthesis.speak(utterance);
-    speechSynthesis.resume();
-
-    setTimeout(() => {
-      if (!resolved && !speechSynthesis.speaking) {
-        done();
+      if (japaneseVoice) {
+        utterance.voice = japaneseVoice;
       }
-    }, 8000);
 
-    setTimeout(done, 15000);
+      let resolved = false;
+      const done = () => {
+        if (resolved) return;
+        resolved = true;
+        stopKeepAlive();
+        resolve();
+      };
+
+      utterance.onstart = () => {
+        startKeepAlive();
+      };
+
+      utterance.onend = done;
+      utterance.onerror = (e) => {
+        if ((e as SpeechSynthesisErrorEvent).error === 'canceled') {
+          done();
+          return;
+        }
+        console.warn('[Speech] Error:', (e as SpeechSynthesisErrorEvent).error);
+        done();
+      };
+
+      speechSynthesis.speak(utterance);
+      speechSynthesis.resume();
+
+      setTimeout(() => {
+        if (!resolved && !speechSynthesis.speaking) {
+          done();
+        }
+      }, 8000);
+
+      setTimeout(done, 15000);
+    };
+
+    if (speechSynthesis.speaking || speechSynthesis.pending) {
+      speechSynthesis.cancel();
+      setTimeout(doSpeak, 100);
+    } else {
+      speechSynthesis.cancel();
+      setTimeout(doSpeak, 50);
+    }
   });
 }
 
