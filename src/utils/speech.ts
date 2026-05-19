@@ -1,5 +1,4 @@
 let japaneseVoice: SpeechSynthesisVoice | null = null;
-let voiceLoadAttempted = false;
 let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 
 function findJapaneseVoice(): SpeechSynthesisVoice | null {
@@ -11,121 +10,156 @@ function findJapaneseVoice(): SpeechSynthesisVoice | null {
   );
 }
 
-function initVoices() {
-  if (!('speechSynthesis' in window)) return;
-
-  const tryLoad = () => {
+function loadVoices(): Promise<void> {
+  return new Promise((resolve) => {
     const voice = findJapaneseVoice();
     if (voice) {
       japaneseVoice = voice;
-      voiceLoadAttempted = true;
+      resolve();
+      return;
     }
-  };
 
-  tryLoad();
+    const onVoicesChanged = () => {
+      const v = findJapaneseVoice();
+      if (v) japaneseVoice = v;
+      resolve();
+    };
 
-  if (!voiceLoadAttempted) {
-    speechSynthesis.addEventListener('voiceschanged', tryLoad, { once: true });
-    setTimeout(tryLoad, 2000);
-  }
+    speechSynthesis.addEventListener('voiceschanged', onVoicesChanged, { once: true });
+    setTimeout(onVoicesChanged, 3000);
+  });
+}
+
+function warmUpEngine(): Promise<void> {
+  return new Promise((resolve) => {
+    speechSynthesis.cancel();
+
+    const warmup = new SpeechSynthesisUtterance('\u3053');
+    warmup.lang = 'ja-JP';
+    warmup.rate = 10;
+    warmup.volume = 0.01;
+
+    if (japaneseVoice) warmup.voice = japaneseVoice;
+
+    const done = () => {
+      speechSynthesis.cancel();
+      resolve();
+    };
+
+    warmup.onend = done;
+    warmup.onerror = done;
+
+    speechSynthesis.speak(warmup);
+    speechSynthesis.resume();
+
+    setTimeout(done, 1500);
+  });
 }
 
 function startKeepAlive() {
   if (keepAliveTimer) return;
   keepAliveTimer = setInterval(() => {
-    if (speechSynthesis.speaking) {
-      speechSynthesis.resume();
-    }
-  }, 3000);
+    speechSynthesis.resume();
+  }, 5000);
 }
 
-function stopKeepAlive() {
-  if (keepAliveTimer) {
-    clearInterval(keepAliveTimer);
-    keepAliveTimer = null;
-  }
-}
-
-initVoices();
-
-function createUtterance(text: string, rate: number, onDone: () => void): SpeechSynthesisUtterance {
-  if (!japaneseVoice) {
-    const voice = findJapaneseVoice();
-    if (voice) japaneseVoice = voice;
-  }
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'ja-JP';
-  utterance.rate = rate;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-
-  if (japaneseVoice) {
-    utterance.voice = japaneseVoice;
-  }
-
-  let resolved = false;
-  const done = () => {
-    if (resolved) return;
-    resolved = true;
-    stopKeepAlive();
-    onDone();
-  };
-
-  utterance.onstart = () => {
-    startKeepAlive();
-  };
-
-  utterance.onend = done;
-  utterance.onerror = (e) => {
-    const err = e as SpeechSynthesisErrorEvent;
-    if (err.error === 'canceled') {
-      done();
-      return;
-    }
-    console.warn('[Speech] Error:', err.error);
-    done();
-  };
-
-  return utterance;
+if ('speechSynthesis' in window) {
+  loadVoices()
+    .then(() => warmUpEngine())
+    .then(() => {
+      startKeepAlive();
+    });
 }
 
 export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
   return new Promise((resolve) => {
     if (!('speechSynthesis' in window)) {
-      console.warn('[Speech] Not supported');
       resolve();
       return;
     }
 
-    stopKeepAlive();
-
-    const isSpeaking = speechSynthesis.speaking || speechSynthesis.pending;
-
-    if (isSpeaking) {
-      speechSynthesis.cancel();
-      setTimeout(() => {
-        const utterance = createUtterance(text, rate, resolve);
-        speechSynthesis.speak(utterance);
-        speechSynthesis.resume();
-      }, 150);
-    } else {
-      const utterance = createUtterance(text, rate, resolve);
-      speechSynthesis.speak(utterance);
-      speechSynthesis.resume();
+    if (!japaneseVoice) {
+      const v = findJapaneseVoice();
+      if (v) japaneseVoice = v;
     }
 
-    setTimeout(() => {
-      if (!speechSynthesis.speaking) {
-        stopKeepAlive();
-        resolve();
-      }
-    }, 8000);
+    let attempts = 0;
+    const maxAttempts = 3;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let startCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
-    setTimeout(() => {
-      stopKeepAlive();
-      resolve();
-    }, 15000);
+    function trySpeak() {
+      attempts++;
+
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+      if (startCheckTimer) {
+        clearTimeout(startCheckTimer);
+        startCheckTimer = null;
+      }
+
+      const needsCancel = speechSynthesis.speaking || speechSynthesis.pending;
+      if (needsCancel) {
+        speechSynthesis.cancel();
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ja-JP';
+      utterance.rate = rate;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      if (japaneseVoice) {
+        utterance.voice = japaneseVoice;
+      }
+
+      let started = false;
+      let resolved = false;
+
+      const done = () => {
+        if (resolved) return;
+        resolved = true;
+        if (retryTimer) clearTimeout(retryTimer);
+        if (startCheckTimer) clearTimeout(startCheckTimer);
+        resolve();
+      };
+
+      utterance.onstart = () => {
+        started = true;
+      };
+
+      utterance.onend = done;
+
+      utterance.onerror = (e) => {
+        const err = (e as SpeechSynthesisErrorEvent).error;
+        if (err === 'canceled') {
+          return;
+        }
+        if (!started && attempts < maxAttempts) {
+          retryTimer = setTimeout(trySpeak, 300);
+        } else {
+          done();
+        }
+      };
+
+      speechSynthesis.speak(utterance);
+      speechSynthesis.resume();
+
+      startCheckTimer = setTimeout(() => {
+        if (!started && !resolved) {
+          if (attempts < maxAttempts) {
+            trySpeak();
+          } else {
+            speechSynthesis.cancel();
+            done();
+          }
+        }
+      }, 2000);
+    }
+
+    trySpeak();
   });
 }
 
