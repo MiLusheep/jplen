@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import Button from '../../components/Button/Button';
+import SpeakButton from '../../components/SpeakButton/SpeakButton';
 import { vocabularyData } from '../../data/vocabulary/n5';
 import { n4VocabularyData } from '../../data/vocabulary/n4';
 import { n3VocabularyData } from '../../data/vocabulary/n3';
@@ -142,6 +143,7 @@ export default function Vocabulary() {
                 <div className={styles.wordCardInner}>
                   <div className={styles.wordFront}>
                     <span className={styles.wordJp}>{word.japanese}</span>
+                    <SpeakButton text={word.reading} />
                     <span className={styles.wordFrontReading}>{word.reading}</span>
                     <span className={styles.wordCategory}>{word.category}</span>
                   </div>
@@ -169,6 +171,7 @@ export default function Vocabulary() {
                   <span className={styles.flashcardJp}>
                     {filteredWords[currentCardIndex].japanese}
                   </span>
+                  <SpeakButton text={filteredWords[currentCardIndex].reading} size="md" />
                   <span className={styles.flashcardFrontReading}>
                     {filteredWords[currentCardIndex].reading}
                   </span>

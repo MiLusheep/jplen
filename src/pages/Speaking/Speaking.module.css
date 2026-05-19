@@ -231,6 +231,12 @@
   flex: 1;
 }
 
+.phraseJpRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .phraseJp {
   font-family: var(--font-jp);
   font-size: var(--text-xl);

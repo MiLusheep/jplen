@@ -7,6 +7,7 @@ import Card from '../../components/Card/Card';
 import ProgressBar from '../../components/ProgressBar/ProgressBar';
 import Button from '../../components/Button/Button';
 import Modal from '../../components/Modal/Modal';
+import SpeakButton from '../../components/SpeakButton/SpeakButton';
 import styles from './Grammar.module.css';
 
 const levels: JLPTLevel[] = ['N5', 'N4', 'N3', 'N2', 'N1'];
@@ -165,8 +166,9 @@ export default function Grammar() {
                         <div key={i} className={styles.example}>
                           <div className={styles.exampleJpRow}>
                             <p className={styles.exampleJp}>{ex.japanese}</p>
-                            <p className={styles.exampleReading}>{ex.reading}</p>
+                            <SpeakButton text={ex.reading || ex.japanese} />
                           </div>
+                          <p className={styles.exampleReading}>{ex.reading}</p>
                           <p className={styles.exampleCn}>{ex.chinese}</p>
                         </div>
                       ))}

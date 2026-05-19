@@ -6,6 +6,7 @@ import type { NewsArticle } from '../../types/news';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import Modal from '../../components/Modal/Modal';
+import SpeakButton from '../../components/SpeakButton/SpeakButton';
 import styles from './Reading.module.css';
 
 type TabKey = 'materials' | 'news';
@@ -279,6 +280,7 @@ export default function Reading() {
                       <span className={styles.newsLevelBadge}>{article.level}</span>
                     </div>
                     <h3 className={styles.newsCardTitle}>{article.title}</h3>
+                    <SpeakButton text={article.title} />
                     {article.image && (
                       <div className={styles.newsCardImage}>
                         <img src={article.image} alt="" loading="lazy" />
@@ -330,6 +332,7 @@ export default function Reading() {
               <span className={styles.readingWordCount}>
                 {selectedMaterial.wordCount}字 · 约{selectedMaterial.estimatedTime}分钟
               </span>
+              <SpeakButton text={selectedMaterial.titleJp} size="md" />
             </div>
 
             <div className={styles.readingBody}>
@@ -408,6 +411,7 @@ export default function Reading() {
               >
                 {selectedArticle.sourceLabel}
               </span>
+              <SpeakButton text={selectedArticle.title} size="md" />
             </div>
 
             <div className={styles.newsArticleBody}>

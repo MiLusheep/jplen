@@ -4,6 +4,7 @@ import { useSpeakingStore } from '../../stores/useSpeakingStore';
 import type { SpeakingLesson } from '../../types/speaking';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
+import SpeakButton from '../../components/SpeakButton/SpeakButton';
 import styles from './Speaking.module.css';
 
 const speakingLevels = ['N5', 'N4', 'N3', 'N2', 'N1'] as const;
@@ -174,7 +175,10 @@ export default function Speaking() {
                         )}
                       </div>
                       <div className={styles.phraseInfo}>
-                        <p className={styles.phraseJp}>{phrase.japanese}</p>
+                        <div className={styles.phraseJpRow}>
+                          <p className={styles.phraseJp}>{phrase.japanese}</p>
+                          <SpeakButton text={phrase.japanese} />
+                        </div>
                         <p className={styles.phraseReading}>{phrase.reading}</p>
                         <p className={styles.phraseCn}>{phrase.chinese}</p>
                       </div>
