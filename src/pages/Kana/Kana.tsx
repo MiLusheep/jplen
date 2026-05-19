@@ -34,15 +34,11 @@ export default function Kana() {
     return note.relatedTo.includes(kanaType) || note.relatedTo.includes('hiragana') || note.relatedTo.includes('katakana');
   });
 
-  const playKana = useCallback(async (item: KanaItem) => {
+  const playKana = useCallback((item: KanaItem) => {
     setPlayingKana(item.kana);
-    try {
-      await speakJapanese(item.kana);
-    } catch {
-      // silent fallback
-    } finally {
+    speakJapanese(item.kana).finally(() => {
       setPlayingKana(null);
-    }
+    });
   }, []);
 
   const generateQuiz = useCallback(() => {

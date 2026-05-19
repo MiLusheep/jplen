@@ -12,16 +12,13 @@ interface SpeakButtonProps {
 export default function SpeakButton({ text, rate = 0.8, size = 'sm', className }: SpeakButtonProps) {
   const [speaking, setSpeaking] = useState(false);
 
-  const handleSpeak = useCallback(async (e: React.MouseEvent) => {
+  const handleSpeak = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (speaking) return;
     setSpeaking(true);
-    try {
-      await speakJapanese(text, rate);
-    } catch {
-    } finally {
+    speakJapanese(text, rate).finally(() => {
       setSpeaking(false);
-    }
+    });
   }, [text, rate, speaking]);
 
   return (
