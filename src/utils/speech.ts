@@ -1,16 +1,23 @@
 let japaneseVoice: SpeechSynthesisVoice | null = null;
 let voiceLoadAttempted = false;
+let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
+
+function findJapaneseVoice(): SpeechSynthesisVoice | null {
+  const voices = speechSynthesis.getVoices();
+  return (
+    voices.find((v) => v.lang === 'ja-JP') ||
+    voices.find((v) => v.lang.startsWith('ja')) ||
+    null
+  );
+}
 
 function initVoices() {
   if (!('speechSynthesis' in window)) return;
 
   const tryLoad = () => {
-    const voices = speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      japaneseVoice =
-        voices.find((v) => v.lang === 'ja-JP') ||
-        voices.find((v) => v.lang.startsWith('ja')) ||
-        null;
+    const voice = findJapaneseVoice();
+    if (voice) {
+      japaneseVoice = voice;
       voiceLoadAttempted = true;
     }
   };
@@ -20,6 +27,22 @@ function initVoices() {
   if (!voiceLoadAttempted) {
     speechSynthesis.addEventListener('voiceschanged', tryLoad, { once: true });
     setTimeout(tryLoad, 2000);
+  }
+}
+
+function startKeepAlive() {
+  if (keepAliveTimer) return;
+  keepAliveTimer = setInterval(() => {
+    if (speechSynthesis.speaking) {
+      speechSynthesis.resume();
+    }
+  }, 5000);
+}
+
+function stopKeepAlive() {
+  if (keepAliveTimer) {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = null;
   }
 }
 
@@ -33,7 +56,14 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
       return;
     }
 
-    speechSynthesis.cancel();
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+    }
+
+    if (!japaneseVoice) {
+      const voice = findJapaneseVoice();
+      if (voice) japaneseVoice = voice;
+    }
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ja-JP';
@@ -43,23 +73,18 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
 
     if (japaneseVoice) {
       utterance.voice = japaneseVoice;
-    } else {
-      const voices = speechSynthesis.getVoices();
-      const jaVoice =
-        voices.find((v) => v.lang === 'ja-JP') ||
-        voices.find((v) => v.lang.startsWith('ja')) ||
-        null;
-      if (jaVoice) {
-        utterance.voice = jaVoice;
-        japaneseVoice = jaVoice;
-      }
     }
 
     let resolved = false;
     const done = () => {
       if (resolved) return;
       resolved = true;
+      stopKeepAlive();
       resolve();
+    };
+
+    utterance.onstart = () => {
+      startKeepAlive();
     };
 
     utterance.onend = done;
@@ -69,14 +94,15 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
     };
 
     speechSynthesis.speak(utterance);
+    speechSynthesis.resume();
 
     setTimeout(() => {
       if (!resolved && !speechSynthesis.speaking) {
         done();
       }
-    }, 5000);
+    }, 8000);
 
-    setTimeout(done, 10000);
+    setTimeout(done, 15000);
   });
 }
 
