@@ -9,7 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, '..', 'src', 'data', 'news');
 const OUTPUT_FILE = path.join(DATA_DIR, 'articles.json');
 const MAX_ARTICLES_PER_SOURCE = 15;
-const MAX_TOTAL_ARTICLES = 120;
+const MAX_TOTAL_ARTICLES = 500;
+const MAX_ARTICLE_AGE_DAYS = 30;
 
 const cookieJar = {};
 
@@ -915,20 +916,58 @@ async function main() {
     return true;
   });
 
-  const finalArticles = deduped.slice(0, MAX_TOTAL_ARTICLES);
+  const newArticles = deduped;
+
+  let existingArticles = [];
+  let existingSources = [];
+  if (fs.existsSync(OUTPUT_FILE)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf-8'));
+      existingArticles = existing.articles || [];
+      existingSources = existing.sources || [];
+    } catch (e) {
+      console.log('[Merge] Could not read existing file, starting fresh');
+    }
+  }
+
+  const existingIds = new Set(existingArticles.map((a) => a.id));
+  const existingTitles = new Set(existingArticles.map((a) => a.titleJp));
+  const mergedSources = [...new Set([...existingSources, ...sources])];
+
+  for (const article of newArticles) {
+    if (!existingIds.has(article.id) && !existingTitles.has(article.titleJp)) {
+      existingArticles.push(article);
+    }
+  }
+
+  existingArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - MAX_ARTICLE_AGE_DAYS);
+  const finalArticles = existingArticles
+    .filter((a) => {
+      const articleDate = new Date(a.pubDate);
+      return !isNaN(articleDate.getTime()) && articleDate >= cutoffDate;
+    })
+    .slice(0, MAX_TOTAL_ARTICLES);
+
+  const removedCount = existingArticles.length - finalArticles.length;
+  const addedCount = newArticles.length;
 
   const result = {
     articles: finalArticles,
     fetchedAt: new Date().toISOString(),
-    sources: sources,
+    sources: mergedSources,
     totalCount: finalArticles.length,
   };
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(result, null, 2), 'utf-8');
 
   console.log(`=== News Crawler Complete ===`);
-  console.log(`Total: ${finalArticles.length} articles from ${sources.length} sources`);
-  console.log(`Sources: ${sources.join(', ')}`);
+  console.log(`Added: ${addedCount} new articles`);
+  console.log(`Removed: ${removedCount} expired articles`);
+  console.log(`Total: ${finalArticles.length} articles from ${mergedSources.length} sources`);
+  console.log(`Sources: ${mergedSources.join(', ')}`);
   console.log(`Output: ${OUTPUT_FILE}`);
 }
 
