@@ -1,0 +1,302 @@
+.vocabulary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+}
+
+.subtitle {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  margin-bottom: 0;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.levelTabs {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.levelTab {
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  font-family: var(--font-body);
+}
+
+.levelTab:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.levelActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.controlsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.categoryTabs {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+}
+
+.categoryTab {
+  padding: var(--space-2) var(--space-4);
+  border-radius: 100px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  font-family: var(--font-body);
+}
+
+.categoryTab:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.categoryActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.modeToggle {
+  display: flex;
+  background: var(--color-bg);
+  border-radius: 100px;
+  padding: 2px;
+}
+
+.modeBtn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: 100px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-body);
+}
+
+.modeActive {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.wordGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-4);
+}
+
+.wordCard {
+  height: 120px;
+  perspective: 600px;
+  cursor: pointer;
+}
+
+.wordCardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flipped .wordCardInner,
+.flipped .flashcardInner {
+  transform: rotateY(180deg);
+}
+
+.wordFront,
+.wordBack {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.wordFront {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.wordBack {
+  background: var(--color-primary);
+  color: white;
+  transform: rotateY(180deg);
+}
+
+.wordJp {
+  font-family: var(--font-jp);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+
+.wordFrontReading {
+  font-family: var(--font-jp);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+  background: rgba(233, 69, 96, 0.06);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.wordCategory {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.wordReading {
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.wordCn {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.flashcardMode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.flashcardCounter {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.flashcard {
+  width: 360px;
+  height: 260px;
+  perspective: 800px;
+  cursor: pointer;
+}
+
+.flashcardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flashcardFront,
+.flashcardBack {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+.flashcardFront {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.flashcardBack {
+  background: var(--color-gradient-accent);
+  color: white;
+  transform: rotateY(180deg);
+}
+
+.flashcardJp {
+  font-family: var(--font-jp);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+}
+
+.flashcardFrontReading {
+  font-family: var(--font-jp);
+  font-size: var(--text-lg);
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+  background: rgba(233, 69, 96, 0.06);
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.flashcardHint {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.flashcardReading {
+  font-size: var(--text-xl);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.flashcardCn {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+
+.flashcardCategory {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 2px 10px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.flashcardControls {
+  display: flex;
+  gap: var(--space-4);
+}

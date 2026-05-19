@@ -1,0 +1,115 @@
+.recorder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.recordBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 100px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-body);
+}
+
+.recordBtn:hover {
+  background: var(--color-accent-dark);
+  box-shadow: var(--shadow-glow);
+  transform: scale(1.02);
+}
+
+.recordBtn:active {
+  transform: scale(0.98);
+}
+
+.recordIcon {
+  font-size: var(--text-lg);
+}
+
+.recordingControls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.recordingIndicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.recordingDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-error);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.recordingText {
+  font-size: var(--text-sm);
+  color: var(--color-error);
+  font-weight: var(--weight-medium);
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+}
+
+.waveformBar {
+  width: 3px;
+  height: 4px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  animation: waveform 0.8s ease-in-out infinite;
+}
+
+.buttons {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.stopBtn,
+.discardBtn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: 100px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  font-family: var(--font-body);
+}
+
+.stopBtn {
+  background: var(--color-primary);
+  color: white;
+}
+
+.stopBtn:hover {
+  background: var(--color-primary-light);
+}
+
+.discardBtn {
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+}
+
+.discardBtn:hover {
+  background: var(--color-bg-warm);
+  color: var(--color-text);
+}
