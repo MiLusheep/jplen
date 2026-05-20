@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { hiraganaData, katakanaData } from '../../data/vocabulary/kana';
 import type { KanaItem, KanaRow } from '../../data/vocabulary/kana';
+import { kanaVocabularyMap } from '../../data/vocabulary/kanaVocabulary';
 import { kanaCultureNotes } from '../../data/culture/notes';
 import { speakJapanese } from '../../utils/speech';
 import CultureCard from '../../components/CultureCard/CultureCard';
@@ -173,6 +174,26 @@ export default function Kana() {
                       </>
                     )}
                   </div>
+                  {kanaVocabularyMap[hoveredKana.kana] && (
+                    <div className={styles.previewVocab}>
+                      <span className={styles.vocabTitle}>相关词汇</span>
+                      {kanaVocabularyMap[hoveredKana.kana].map((v, i) => (
+                        <button
+                          key={i}
+                          className={styles.vocabItem}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            speakJapanese(v.reading);
+                          }}
+                          title={`播放 ${v.reading} 的发音`}
+                        >
+                          <span className={styles.vocabWord}>{v.word}</span>
+                          <span className={styles.vocabReading}>{v.reading}</span>
+                          <span className={styles.vocabMeaning}>{v.meaning}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className={styles.previewPlaceholder}>
