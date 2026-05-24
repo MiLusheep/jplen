@@ -174,26 +174,32 @@ export default function Kana() {
                       </>
                     )}
                   </div>
-                  {kanaVocabularyMap[hoveredKana.kana] && (
-                    <div className={styles.previewVocab}>
-                      <span className={styles.vocabTitle}>相关词汇</span>
-                      {kanaVocabularyMap[hoveredKana.kana].map((v, i) => (
-                        <button
-                          key={i}
-                          className={styles.vocabItem}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            speakJapanese(v.reading);
-                          }}
-                          title={`播放 ${v.reading} 的发音`}
-                        >
-                          <span className={styles.vocabWord}>{v.word}</span>
-                          <span className={styles.vocabReading}>{v.reading}</span>
-                          <span className={styles.vocabMeaning}>{v.meaning}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  {(() => {
+                    const hiraganaChar = kanaType === 'katakana'
+                      ? hiraganaData.flatMap(r => r.items).find(k => k.romaji === hoveredKana.romaji)?.kana
+                      : hoveredKana.kana;
+                    const vocabs = hiraganaChar ? kanaVocabularyMap[hiraganaChar] : undefined;
+                    return vocabs ? (
+                      <div className={styles.previewVocab}>
+                        <span className={styles.vocabTitle}>相关词汇</span>
+                        {vocabs.map((v, i) => (
+                          <button
+                            key={i}
+                            className={styles.vocabItem}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              speakJapanese(v.reading);
+                            }}
+                            title={`播放 ${v.reading} 的发音`}
+                          >
+                            <span className={styles.vocabWord}>{v.word}</span>
+                            <span className={styles.vocabReading}>{v.reading}</span>
+                            <span className={styles.vocabMeaning}>{v.meaning}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               ) : (
                 <div className={styles.previewPlaceholder}>

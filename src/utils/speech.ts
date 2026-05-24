@@ -1,8 +1,6 @@
-let japaneseVoice: SpeechSynthesisVoice | null = null;
 let _utteranceRef: SpeechSynthesisUtterance | null = null;
-let voiceLoaded = false;
 
-function findJapaneseVoice(): SpeechSynthesisVoice | null {
+function getJapaneseVoice(): SpeechSynthesisVoice | null {
   const voices = speechSynthesis.getVoices();
   return (
     voices.find((v) => v.lang === 'ja-JP') ||
@@ -11,51 +9,22 @@ function findJapaneseVoice(): SpeechSynthesisVoice | null {
   );
 }
 
-function ensureVoiceLoaded(): Promise<void> {
-  if (voiceLoaded && japaneseVoice) return Promise.resolve();
-
-  return new Promise((resolve) => {
-    const voice = findJapaneseVoice();
-    if (voice) {
-      japaneseVoice = voice;
-      voiceLoaded = true;
-      resolve();
-      return;
-    }
-
-    const handler = () => {
-      const v = findJapaneseVoice();
-      if (v) {
-        japaneseVoice = v;
-        voiceLoaded = true;
-      }
-      resolve();
-    };
-
-    speechSynthesis.addEventListener('voiceschanged', handler, { once: true });
-    setTimeout(handler, 3000);
-  });
-}
-
 if ('speechSynthesis' in window) {
-  ensureVoiceLoaded();
   speechSynthesis.getVoices();
+  speechSynthesis.addEventListener('voiceschanged', () => {
+    speechSynthesis.getVoices();
+  });
 }
 
 export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
   return new Promise((resolve) => {
     if (!('speechSynthesis' in window)) {
+      console.warn('[Speech] Not supported');
       resolve();
       return;
     }
 
-    if (!japaneseVoice) {
-      const v = findJapaneseVoice();
-      if (v) japaneseVoice = v;
-    }
-
     speechSynthesis.cancel();
-    _utteranceRef = null;
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ja-JP';
@@ -63,8 +32,9 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
     utterance.pitch = 1;
     utterance.volume = 1;
 
-    if (japaneseVoice) {
-      utterance.voice = japaneseVoice;
+    const voice = getJapaneseVoice();
+    if (voice) {
+      utterance.voice = voice;
     }
 
     _utteranceRef = utterance;
@@ -80,35 +50,14 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
 
     utterance.onend = done;
     utterance.onerror = (e) => {
-      const err = (e as SpeechSynthesisErrorEvent).error;
-      if (err === 'interrupted' || err === 'canceled') {
-        done();
-        return;
-      }
-      console.warn('[Speech] Error:', err);
+      console.warn('[Speech] Error:', (e as SpeechSynthesisErrorEvent).error);
       done();
     };
 
     speechSynthesis.speak(utterance);
     speechSynthesis.resume();
 
-    const checkTimer = setInterval(() => {
-      if (resolved) {
-        clearInterval(checkTimer);
-        return;
-      }
-      if (speechSynthesis.speaking) {
-        speechSynthesis.resume();
-      } else if (!speechSynthesis.pending) {
-        clearInterval(checkTimer);
-        done();
-      }
-    }, 1000);
-
-    setTimeout(() => {
-      clearInterval(checkTimer);
-      done();
-    }, 10000);
+    setTimeout(done, 10000);
   });
 }
 
