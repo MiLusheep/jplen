@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { hiraganaData, katakanaData } from '../../data/vocabulary/kana';
 import type { KanaItem, KanaRow } from '../../data/vocabulary/kana';
-import { kanaVocabularyMap } from '../../data/vocabulary/kanaVocabulary';
+import { kanaVocabularyMap, katakanaVocabularyMap } from '../../data/vocabulary/kanaVocabulary';
 import { kanaCultureNotes } from '../../data/culture/notes';
 import { speakJapanese } from '../../utils/speech';
 import CultureCard from '../../components/CultureCard/CultureCard';
@@ -175,10 +175,9 @@ export default function Kana() {
                     )}
                   </div>
                   {(() => {
-                    const hiraganaChar = kanaType === 'katakana'
-                      ? hiraganaData.flatMap(r => r.items).find(k => k.romaji === hoveredKana.romaji)?.kana
-                      : hoveredKana.kana;
-                    const vocabs = hiraganaChar ? kanaVocabularyMap[hiraganaChar] : undefined;
+                    const vocabs = kanaType === 'katakana'
+                      ? katakanaVocabularyMap[hoveredKana.kana]
+                      : kanaVocabularyMap[hoveredKana.kana];
                     return vocabs ? (
                       <div className={styles.previewVocab}>
                         <span className={styles.vocabTitle}>相关词汇</span>

@@ -1,4 +1,5 @@
 let _utteranceRef: SpeechSynthesisUtterance | null = null;
+let _keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 
 function getJapaneseVoice(): SpeechSynthesisVoice | null {
   const voices = speechSynthesis.getVoices();
@@ -7,6 +8,22 @@ function getJapaneseVoice(): SpeechSynthesisVoice | null {
     voices.find((v) => v.lang.startsWith('ja')) ||
     null
   );
+}
+
+function startKeepAlive() {
+  stopKeepAlive();
+  _keepAliveTimer = setInterval(() => {
+    if (speechSynthesis.speaking) {
+      speechSynthesis.resume();
+    }
+  }, 3000);
+}
+
+function stopKeepAlive() {
+  if (_keepAliveTimer) {
+    clearInterval(_keepAliveTimer);
+    _keepAliveTimer = null;
+  }
 }
 
 if ('speechSynthesis' in window) {
@@ -19,12 +36,15 @@ if ('speechSynthesis' in window) {
 export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
   return new Promise((resolve) => {
     if (!('speechSynthesis' in window)) {
-      console.warn('[Speech] Not supported');
       resolve();
       return;
     }
 
-    speechSynthesis.cancel();
+    stopKeepAlive();
+
+    if (speechSynthesis.speaking || speechSynthesis.pending) {
+      speechSynthesis.cancel();
+    }
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ja-JP';
@@ -43,21 +63,31 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
     const done = () => {
       if (resolved) return;
       resolved = true;
+      stopKeepAlive();
       void _utteranceRef;
       _utteranceRef = null;
       resolve();
     };
 
+    utterance.onstart = () => {
+      startKeepAlive();
+    };
+
     utterance.onend = done;
     utterance.onerror = (e) => {
-      console.warn('[Speech] Error:', (e as SpeechSynthesisErrorEvent).error);
+      const err = (e as SpeechSynthesisErrorEvent).error;
+      if (err === 'interrupted' || err === 'canceled') {
+        done();
+        return;
+      }
+      console.warn('[Speech] Error:', err);
       done();
     };
 
     speechSynthesis.speak(utterance);
     speechSynthesis.resume();
 
-    setTimeout(done, 10000);
+    setTimeout(done, 15000);
   });
 }
 
