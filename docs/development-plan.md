@@ -100,3 +100,18 @@
 ### 修复
 - 假名学习页面悬浮窗闪烁问题修复
 - .gitignore 排除 .trae 文件夹
+
+## v0.3.0 变更记录
+
+### 假名音频播放系统
+- 使用 Microsoft Edge TTS (ja-JP-NanamiNeural) 生成104个假名发音 mp3 文件
+- 覆盖全部清音、浊音、半浊音、拗音（含片假名同音）
+- 创建 kanaAudio.ts 音频播放模块（基于 HTMLAudioElement）
+- 音频缓存机制，避免重复加载
+- 假名播放优先使用本地 mp3，词汇播放仍使用 TTS
+- 生成脚本 scripts/generate-kana-audio.py（可重新生成音频）
+
+### 片假名词汇修复
+- 创建 katakanaVocabularyMap 存储片假名专用外来语词汇
+- Kana 页面根据 kanaType 动态切换平假名/片假名词汇表
+- 片假名显示外来语词汇（如 ア→アイス、アパート、アルバイト）
