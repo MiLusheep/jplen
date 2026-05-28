@@ -1,3 +1,5 @@
+import { speakWithEdgeTTS, isEdgeTTSAvailable, stopEdgeTTS } from './edgeTts';
+
 let _utteranceRef: SpeechSynthesisUtterance | null = null;
 let _keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -26,14 +28,7 @@ function stopKeepAlive() {
   }
 }
 
-if ('speechSynthesis' in window) {
-  speechSynthesis.getVoices();
-  speechSynthesis.addEventListener('voiceschanged', () => {
-    speechSynthesis.getVoices();
-  });
-}
-
-export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
+function speakWithBrowserTTS(text: string, rate: number = 0.8): Promise<void> {
   return new Promise((resolve) => {
     if (!('speechSynthesis' in window)) {
       resolve();
@@ -80,7 +75,7 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
         done();
         return;
       }
-      console.warn('[Speech] Error:', err);
+      console.warn('[Speech] Browser TTS error:', err);
       done();
     };
 
@@ -91,8 +86,38 @@ export function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
   });
 }
 
+if ('speechSynthesis' in window) {
+  speechSynthesis.getVoices();
+  speechSynthesis.addEventListener('voiceschanged', () => {
+    speechSynthesis.getVoices();
+  });
+}
+
+export async function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
+  stopAll();
+
+  if (isEdgeTTSAvailable()) {
+    try {
+      return await speakWithEdgeTTS(text, rate);
+    } catch {
+      return speakWithBrowserTTS(text, rate);
+    }
+  }
+
+  return speakWithBrowserTTS(text, rate);
+}
+
+export function stopAll() {
+  stopEdgeTTS();
+  stopKeepAlive();
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+  }
+  _utteranceRef = null;
+}
+
 export function isSpeechSupported(): boolean {
-  return 'speechSynthesis' in window;
+  return 'speechSynthesis' in window || isEdgeTTSAvailable();
 }
 
 export function getAvailableVoices(): SpeechSynthesisVoice[] {
