@@ -112,6 +112,14 @@ export default function Reading() {
     setSelectedArticle(null);
   };
 
+  const getFullReading = (material: ReadingMaterial | null): string => {
+    if (!material) return '';
+    const readings = material.content
+      .map((segment) => segment.reading)
+      .filter((r): r is string => !!r);
+    return readings.join('');
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
@@ -332,7 +340,7 @@ export default function Reading() {
               <span className={styles.readingWordCount}>
                 {selectedMaterial.wordCount}字 · 约{selectedMaterial.estimatedTime}分钟
               </span>
-              <SpeakButton text={selectedMaterial.titleJp} size="md" />
+              <SpeakButton text={getFullReading(selectedMaterial)} size="md" />
             </div>
 
             <div className={styles.readingBody}>
