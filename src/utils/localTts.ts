@@ -184,7 +184,22 @@ function playNext() {
   });
 }
 
+function hasKanji(text: string): boolean {
+  for (const ch of text) {
+    const code = ch.charCodeAt(0);
+    // CJK Unified Ideographs: 4E00-9FFF
+    // CJK Unified Ideographs Extension A: 3400-4DBF
+    if ((code >= 0x4E00 && code <= 0x9FFF) || (code >= 0x3400 && code <= 0x4DBF)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function canSpeakLocally(text: string): boolean {
+  // 如果包含汉字，不能使用本地TTS
+  if (hasKanji(text)) return false;
+  
   const units = splitToKanaUnits(text);
   if (units.length === 0) return false;
   return units.every((u) => KANA_TO_ROMAJI[u]);
