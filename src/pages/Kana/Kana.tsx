@@ -4,6 +4,7 @@ import type { KanaItem, KanaRow } from '../../data/vocabulary/kana';
 import { kanaVocabularyMap, katakanaVocabularyMap } from '../../data/vocabulary/kanaVocabulary';
 import { kanaCultureNotes } from '../../data/culture/notes';
 import { speakJapanese } from '../../utils/speech';
+import { playKanaAudio } from '../../utils/kanaAudio';
 import CultureCard from '../../components/CultureCard/CultureCard';
 import Button from '../../components/Button/Button';
 import styles from './Kana.module.css';
@@ -37,7 +38,7 @@ export default function Kana() {
 
   const playKana = useCallback((item: KanaItem) => {
     setPlayingKana(item.kana);
-    speakJapanese(item.kana).finally(() => {
+    playKanaAudio(item.romaji).finally(() => {
       setPlayingKana(null);
     });
   }, []);
