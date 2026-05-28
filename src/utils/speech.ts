@@ -1,4 +1,4 @@
-import { speakWithEdgeTTS, isEdgeTTSAvailable, stopEdgeTTS } from './edgeTts';
+import { speakLocalTTS, stopLocalTTS, canSpeakLocally } from './localTts';
 
 let _utteranceRef: SpeechSynthesisUtterance | null = null;
 let _keepAliveTimer: ReturnType<typeof setInterval> | null = null;
@@ -96,19 +96,15 @@ if ('speechSynthesis' in window) {
 export async function speakJapanese(text: string, rate: number = 0.8): Promise<void> {
   stopAll();
 
-  if (isEdgeTTSAvailable()) {
-    try {
-      return await speakWithEdgeTTS(text, rate);
-    } catch {
-      return speakWithBrowserTTS(text, rate);
-    }
+  if (canSpeakLocally(text)) {
+    return speakLocalTTS(text);
   }
 
   return speakWithBrowserTTS(text, rate);
 }
 
 export function stopAll() {
-  stopEdgeTTS();
+  stopLocalTTS();
   stopKeepAlive();
   if ('speechSynthesis' in window) {
     speechSynthesis.cancel();
@@ -117,7 +113,7 @@ export function stopAll() {
 }
 
 export function isSpeechSupported(): boolean {
-  return 'speechSynthesis' in window || isEdgeTTSAvailable();
+  return 'speechSynthesis' in window || canSpeakLocally('あ');
 }
 
 export function getAvailableVoices(): SpeechSynthesisVoice[] {
