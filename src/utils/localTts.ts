@@ -120,27 +120,14 @@ function splitToKanaUnits(text: string): string[] {
   return units;
 }
 
-const audioCache = new Map<string, HTMLAudioElement>();
-
-function getOrCreateAudio(romaji: string): HTMLAudioElement | null {
-  const cached = audioCache.get(romaji);
-  if (cached) {
-    cached.currentTime = 0;
-    return cached;
-  }
-  const audio = new Audio(getAudioUrl(romaji));
-  audio.preload = 'auto';
-  audioCache.set(romaji, audio);
-  return audio;
-}
-
 let _currentQueue: string[] = [];
 let _currentIndex = 0;
 let _currentAudio: HTMLAudioElement | null = null;
 let _resolved = false;
 let _resolveFn: (() => void) | null = null;
+let _timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-function stopCurrent() {
+function clearCurrentAudio() {
   if (_currentAudio) {
     _currentAudio.pause();
     _currentAudio.currentTime = 0;
@@ -148,12 +135,21 @@ function stopCurrent() {
     _currentAudio.onerror = null;
     _currentAudio = null;
   }
+}
+
+function stopCurrent() {
+  clearCurrentAudio();
   _currentQueue = [];
   _currentIndex = 0;
-  _resolved = false;
+  if (_timeoutId) {
+    clearTimeout(_timeoutId);
+    _timeoutId = null;
+  }
   if (_resolveFn) {
-    _resolveFn();
+    const fn = _resolveFn;
     _resolveFn = null;
+    _resolved = true;
+    fn();
   }
 }
 
@@ -165,26 +161,24 @@ function playNext() {
   }
 
   const romaji = _currentQueue[_currentIndex];
-  const audio = getOrCreateAudio(romaji);
-  if (!audio) {
-    _currentIndex++;
-    playNext();
-    return;
-  }
-
+  const audio = new Audio(getAudioUrl(romaji));
   _currentAudio = audio;
 
   audio.onended = () => {
+    clearCurrentAudio();
     _currentIndex++;
     playNext();
   };
 
   audio.onerror = () => {
+    clearCurrentAudio();
     _currentIndex++;
     playNext();
   };
 
+  audio.preload = 'auto';
   audio.play().catch(() => {
+    clearCurrentAudio();
     _currentIndex++;
     playNext();
   });
@@ -217,11 +211,11 @@ export function speakLocalTTS(text: string): Promise<void> {
 
     playNext();
 
-    setTimeout(() => {
+    _timeoutId = setTimeout(() => {
       if (!_resolved) {
         stopCurrent();
       }
-    }, Math.max(romajiList.length * 800, 3000));
+    }, Math.max(romajiList.length * 1500, 5000));
   });
 }
 
